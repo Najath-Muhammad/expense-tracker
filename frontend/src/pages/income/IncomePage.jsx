@@ -40,6 +40,7 @@ function IncomeModal({ onClose, income = null, walletId }) {
 
   const onSubmit = async (data) => {
     try {
+      if (!walletId) { toast.error('Please select a wallet first'); return; }
       if (isEdit) { await incomeApi.update(income._id, data); toast.success('Income updated!'); }
       else { await incomeApi.add(walletId, data); toast.success('Income added! 🎉'); }
       queryClient.invalidateQueries(['income', walletId]);
@@ -153,8 +154,10 @@ export default function IncomePage() {
           <h1 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Income 💰</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Track your earnings</p>
         </div>
-        <button className="btn-primary" onClick={() => { setEditIncome(null); setModalOpen(true); }}
-          style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}>
+        <button className="btn-primary" 
+          disabled={!activeWallet?._id}
+          onClick={() => { setEditIncome(null); setModalOpen(true); }}
+          style={{ background: activeWallet?._id ? 'linear-gradient(135deg, #22c55e, #16a34a)' : '#ccc', cursor: activeWallet?._id ? 'pointer' : 'not-allowed' }}>
           <Plus size={16} /> Add Income
         </button>
       </div>

@@ -75,7 +75,7 @@ export default function BudgetPage() {
               placeholder="20000" className="input-base" style={{ paddingLeft: '2rem' }}
             />
           </div>
-          <button type="submit" className="btn-primary" disabled={loading || !amount}>
+          <button type="submit" className="btn-primary" disabled={loading || !amount || !activeWallet?._id} style={{ cursor: (!amount || !activeWallet?._id) ? 'not-allowed' : 'pointer', opacity: (!amount || !activeWallet?._id) ? 0.6 : 1 }}>
             {loading ? 'Setting...' : 'Set Budget'}
           </button>
         </form>

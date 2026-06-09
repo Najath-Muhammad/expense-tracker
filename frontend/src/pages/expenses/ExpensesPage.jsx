@@ -47,6 +47,7 @@ function ExpenseModal({ onClose, expense = null, walletId }) {
 
   const onSubmit = async (data) => {
     try {
+      if (!walletId) { toast.error('Please select a wallet first'); return; }
       if (isEdit) {
         await expenseApi.update(expense._id, data);
         toast.success('Expense updated!');
@@ -179,7 +180,12 @@ export default function ExpensesPage() {
           <h1 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Expenses 💸</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Track where your money goes</p>
         </div>
-        <button className="btn-primary" onClick={() => { setEditExpense(null); setModalOpen(true); }}>
+        <button 
+          className="btn-primary" 
+          disabled={!activeWallet?._id}
+          style={{ cursor: activeWallet?._id ? 'pointer' : 'not-allowed', opacity: activeWallet?._id ? 1 : 0.6 }}
+          onClick={() => { setEditExpense(null); setModalOpen(true); }}
+        >
           <Plus size={16} /> Add Expense
         </button>
       </div>
