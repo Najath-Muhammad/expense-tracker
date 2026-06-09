@@ -129,12 +129,12 @@ function JoinWalletModal({ onClose }) {
             <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Invite Code</label>
             <input
               value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} required
-              className="input-base" placeholder="ABC123XYZ"
+              className="input-base" placeholder="ABC123XY"
               style={{ letterSpacing: '0.15em', fontWeight: 700, textAlign: 'center', fontSize: '1.1rem' }}
-              maxLength={9}
+              maxLength={8}
             />
           </div>
-          <button type="submit" className="btn-primary" disabled={loading || code.length < 9} style={{ width: '100%', padding: '0.875rem' }}>
+          <button type="submit" className="btn-primary" disabled={loading || code.length < 8} style={{ width: '100%', padding: '0.875rem' }}>
             {loading ? 'Joining...' : 'Join Wallet'}
           </button>
         </form>

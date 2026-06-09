@@ -73,7 +73,7 @@ app.get('/health', (req: Request, res: Response) => {
 // ─── API Routes ───────────────────────────────────────────────────────────
 const apiPrefix = ROUTES.API_PREFIX;
 
-app.use(`${apiPrefix}${ROUTES.AUTH}`, authLimiter, authRoutes);
+app.use(`${apiPrefix}${ROUTES.AUTH}`, authRoutes);
 app.use(`${apiPrefix}${ROUTES.WALLET}`, walletRoutes);
 app.use(`${apiPrefix}${ROUTES.WALLET}/:walletId${ROUTES.EXPENSE}`, expenseRoutes);
 app.use(`${apiPrefix}${ROUTES.WALLET}/:walletId${ROUTES.INCOME}`, incomeRoutes);

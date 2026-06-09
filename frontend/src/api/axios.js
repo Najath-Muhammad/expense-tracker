@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useAuthStore } from '../store';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
@@ -73,6 +74,8 @@ axiosInstance.interceptors.response.use(
         return axiosInstance(originalRequest);
       } catch (refreshError) {
         localStorage.removeItem('accessToken');
+        localStorage.removeItem('auth-storage'); 
+        useAuthStore.setState({ user: null, accessToken: null, isAuthenticated: false });
         window.location.href = '/login';
         return Promise.reject(refreshError);
       } finally {

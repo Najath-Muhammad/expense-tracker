@@ -144,7 +144,7 @@ export default function IncomePage() {
     },
   });
 
-  const incomes = data?.data || [];
+  const incomes = data?.data?.income || [];
   const meta = data?.meta;
 
   return (

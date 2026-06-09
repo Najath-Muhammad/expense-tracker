@@ -23,6 +23,16 @@ export class ReportController {
     }
   }
 
+  async getWidget(req: AuthenticatedRequest, res: Response) {
+    try {
+      const data = await this._reportService.getWidgetData(req.user._id, req.params.walletId as string);
+      return ApiResponse.success(res, StatusCode.OK, MESSAGES.FETCHED, data);
+    } catch (error: any) {
+      logger.error(`ReportController.getWidget error: ${error.message}`);
+      throw error;
+    }
+  }
+
   async getMonthlyReport(req: AuthenticatedRequest, res: Response) {
     try {
       const { month, year } = req.query;

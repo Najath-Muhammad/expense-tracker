@@ -169,7 +169,7 @@ export default function ExpensesPage() {
     onError: () => toast.error('Failed to delete'),
   });
 
-  const expenses = data?.data || [];
+  const expenses = data?.data?.expenses || [];
   const meta = data?.meta;
 
   return (

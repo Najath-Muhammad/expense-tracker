@@ -96,6 +96,40 @@ export class ReportService {
     }
   }
 
+  async getWidgetData(userId: string | Types.ObjectId, walletId: string | Types.ObjectId) {
+    try {
+      await this._checkWalletAccess(walletId, userId);
+
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      const [totalIncome, totalExpense] = await Promise.all([
+        this._incomeRepo.getTotalIncome(walletId),
+        this._expenseRepo.aggregate([
+          { $match: { wallet: new Types.ObjectId(walletId.toString()) } },
+          { $group: { _id: null, total: { $sum: '$amount' } } },
+        ]),
+      ]);
+
+      const expenseTotal = totalExpense.length > 0 ? totalExpense[0].total : 0;
+      const balance = totalIncome - expenseTotal;
+
+      const recentExpenses = await this._expenseRepo.findWithFilters(walletId.toString(), { limit: 3 });
+
+      return {
+        balance,
+        totalIncome,
+        totalExpense: expenseTotal,
+        recentExpenses: recentExpenses.docs,
+        currency: 'INR',
+        updatedAt: new Date(),
+      };
+    } catch (error: any) {
+      logger.error(`ReportService.getWidgetData error: ${error.message}`);
+      throw error;
+    }
+  }
+
   async getMonthlyReport(userId: string | Types.ObjectId, walletId: string | Types.ObjectId, month: number, year: number) {
     try {
       await this._checkWalletAccess(walletId, userId);
