@@ -1,10 +1,10 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, TrendingDown, TrendingUp, Wallet,
   BarChart3, Target, Settings, LogOut, Menu, X,
-  Moon, Sun, Bell, ChevronDown, Plus
+  Moon, Sun, Bell, Plus
 } from 'lucide-react';
 import { useAuthStore, useThemeStore, useWalletStore } from '../../store';
 import toast from 'react-hot-toast';
@@ -22,9 +22,21 @@ const NAV_ITEMS = [
 export default function DashboardLayout() {
   const { user, logout } = useAuthStore();
   const { theme, toggleTheme } = useThemeStore();
-  const { activeWallet, wallets } = useWalletStore();
+  const { activeWallet } = useWalletStore();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (isMobile) setSidebarOpen(false);
+  }, [location.pathname, isMobile]);
 
   const handleLogout = async () => {
     await logout();
@@ -34,25 +46,35 @@ export default function DashboardLayout() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-base)' }}>
+      {/* Mobile Overlay */}
+      {isMobile && sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 40, backdropFilter: 'blur(2px)'
+          }}
+        />
+      )}
+
       {/* Sidebar */}
       <AnimatePresence>
         <motion.aside
-          initial={{ x: -280 }}
-          animate={{ x: 0 }}
+          initial={isMobile ? { x: -280 } : { x: -280 }}
+          animate={{ x: isMobile ? (sidebarOpen ? 0 : -280) : 0 }}
           style={{
-            width: sidebarOpen ? 260 : 72,
+            width: isMobile ? 260 : (sidebarOpen ? 260 : 72),
             minHeight: '100vh',
             background: 'var(--bg-surface)',
             borderRight: '1px solid var(--border)',
             display: 'flex',
             flexDirection: 'column',
-            position: 'sticky',
+            position: isMobile ? 'fixed' : 'sticky',
             top: 0,
             height: '100vh',
             overflow: 'hidden',
             transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             flexShrink: 0,
-            zIndex: 10,
+            zIndex: 50,
           }}
         >
           {/* Logo */}
@@ -69,7 +91,7 @@ export default function DashboardLayout() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0, fontSize: '1.2rem',
             }}>💰</div>
-            {sidebarOpen && (
+            {(sidebarOpen || isMobile) && (
               <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 style={{ overflow: 'hidden' }}
@@ -80,19 +102,32 @@ export default function DashboardLayout() {
                 <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Personal Finance</p>
               </motion.div>
             )}
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              style={{
-                marginLeft: 'auto', background: 'transparent', border: 'none',
-                color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.25rem',
-              }}
-            >
-              {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
-            </button>
+            {!isMobile && (
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                style={{
+                  marginLeft: 'auto', background: 'transparent', border: 'none',
+                  color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.25rem',
+                }}
+              >
+                {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
+              </button>
+            )}
+            {isMobile && (
+              <button
+                onClick={() => setSidebarOpen(false)}
+                style={{
+                  marginLeft: 'auto', background: 'transparent', border: 'none',
+                  color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.25rem',
+                }}
+              >
+                <X size={18} />
+              </button>
+            )}
           </div>
 
           {/* Active Wallet */}
-          {sidebarOpen && activeWallet && (
+          {(sidebarOpen || isMobile) && activeWallet && (
             <div style={{
               margin: '1rem', padding: '0.75rem 1rem',
               background: 'rgba(99, 102, 241, 0.1)',
@@ -111,7 +146,7 @@ export default function DashboardLayout() {
             {NAV_ITEMS.map(({ path, icon: Icon, label }) => (
               <NavLink key={path} to={path} className={({ isActive }) => `sidebar-item${isActive ? ' active' : ''}`}>
                 <Icon size={19} style={{ flexShrink: 0 }} />
-                {sidebarOpen && <span>{label}</span>}
+                {(sidebarOpen || isMobile) && <span>{label}</span>}
               </NavLink>
             ))}
           </nav>
@@ -130,7 +165,7 @@ export default function DashboardLayout() {
                   ? <img src={user.avatar} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   : (user?.name?.[0] || 'U')}
               </div>
-              {sidebarOpen && (
+              {(sidebarOpen || isMobile) && (
                 <div style={{ overflow: 'hidden' }}>
                   <p style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {user?.name}
@@ -144,17 +179,17 @@ export default function DashboardLayout() {
             <button
               onClick={handleLogout}
               className="btn-ghost"
-              style={{ width: '100%', justifyContent: sidebarOpen ? 'flex-start' : 'center' }}
+              style={{ width: '100%', justifyContent: (sidebarOpen || isMobile) ? 'flex-start' : 'center' }}
             >
               <LogOut size={16} />
-              {sidebarOpen && <span>Logout</span>}
+              {(sidebarOpen || isMobile) && <span>Logout</span>}
             </button>
           </div>
         </motion.aside>
       </AnimatePresence>
 
       {/* Main Content */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', width: '100%' }}>
         {/* Top Bar */}
         <header style={{
           height: 64,
@@ -168,6 +203,16 @@ export default function DashboardLayout() {
           top: 0,
           zIndex: 5,
         }}>
+          {isMobile && (
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="btn-ghost"
+              style={{ padding: '0.5rem', width: 38, height: 38, justifyContent: 'center', marginLeft: '-0.5rem' }}
+            >
+              <Menu size={20} />
+            </button>
+          )}
+
           <div style={{ flex: 1 }} />
 
           {/* Theme Toggle */}
@@ -190,13 +235,15 @@ export default function DashboardLayout() {
           </button>
 
           {/* Add Transaction */}
-          <button className="btn-primary" style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}>
-            <Plus size={15} /> Add
-          </button>
+          {!isMobile && (
+            <button className="btn-primary" style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}>
+              <Plus size={15} /> Add
+            </button>
+          )}
         </header>
 
         {/* Page Content */}
-        <main style={{ flex: 1, padding: '1.5rem' }}>
+        <main style={{ flex: 1, padding: isMobile ? '1rem' : '1.5rem', overflowY: 'auto' }}>
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -213,3 +260,4 @@ export default function DashboardLayout() {
     </div>
   );
 }
+
