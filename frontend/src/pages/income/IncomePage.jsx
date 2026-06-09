@@ -41,7 +41,7 @@ function IncomeModal({ onClose, income = null, walletId }) {
   const onSubmit = async (data) => {
     try {
       if (!walletId) { toast.error('Please select a wallet first'); return; }
-      if (isEdit) { await incomeApi.update(income._id, data); toast.success('Income updated!'); }
+      if (isEdit) { await incomeApi.update(activeWallet._id, income._id, data); toast.success('Income updated!'); }
       else { await incomeApi.add(walletId, data); toast.success('Income added! 🎉'); }
       queryClient.invalidateQueries(['income', walletId]);
       queryClient.invalidateQueries(['dashboard', walletId]);
@@ -136,7 +136,7 @@ export default function IncomePage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => incomeApi.delete(id),
+    mutationFn: (id) => incomeApi.delete(activeWallet._id, id),
     onSuccess: () => {
       toast.success('Income deleted');
       queryClient.invalidateQueries(['income', activeWallet?._id]);

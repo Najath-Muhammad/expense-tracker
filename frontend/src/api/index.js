@@ -28,18 +28,18 @@ export const walletApi = {
 export const expenseApi = {
   add: (walletId, data) => api.post(`/wallets/${walletId}/expenses`, data),
   getAll: (walletId, params) => api.get(`/wallets/${walletId}/expenses`, { params }),
-  getById: (id) => api.get(`/wallets/expenses/${id}`),
-  update: (id, data) => api.patch(`/wallets/expenses/${id}`, data),
-  delete: (id) => api.delete(`/wallets/expenses/${id}`),
+  getById: (walletId, id) => api.get(`/wallets/${walletId}/expenses/${id}`),
+  update: (walletId, id, data) => api.patch(`/wallets/${walletId}/expenses/${id}`, data),
+  delete: (walletId, id) => api.delete(`/wallets/${walletId}/expenses/${id}`),
   getDashboard: (walletId) => api.get(`/wallets/${walletId}/expenses/dashboard`),
 };
 
 export const incomeApi = {
   add: (walletId, data) => api.post(`/wallets/${walletId}/income`, data),
   getAll: (walletId, params) => api.get(`/wallets/${walletId}/income`, { params }),
-  getById: (id) => api.get(`/wallets/income/${id}`),
-  update: (id, data) => api.patch(`/wallets/income/${id}`, data),
-  delete: (id) => api.delete(`/wallets/income/${id}`),
+  getById: (walletId, id) => api.get(`/wallets/${walletId}/income/${id}`),
+  update: (walletId, id, data) => api.patch(`/wallets/${walletId}/income/${id}`, data),
+  delete: (walletId, id) => api.delete(`/wallets/${walletId}/income/${id}`),
   getBalance: (walletId) => api.get(`/wallets/${walletId}/income/balance`),
 };
 

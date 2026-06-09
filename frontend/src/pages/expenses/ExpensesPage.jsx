@@ -49,7 +49,7 @@ function ExpenseModal({ onClose, expense = null, walletId }) {
     try {
       if (!walletId) { toast.error('Please select a wallet first'); return; }
       if (isEdit) {
-        await expenseApi.update(expense._id, data);
+        await expenseApi.update(activeWallet._id, expense._id, data);
         toast.success('Expense updated!');
       } else {
         await expenseApi.add(walletId, data);
@@ -160,7 +160,7 @@ export default function ExpensesPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => expenseApi.delete(id),
+    mutationFn: (id) => expenseApi.delete(activeWallet._id, id),
     onSuccess: () => {
       toast.success('Expense deleted');
       queryClient.invalidateQueries(['expenses', activeWallet?._id]);
