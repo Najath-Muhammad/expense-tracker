@@ -30,24 +30,56 @@ export class ReportService {
 
       const now = new Date();
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const todayStart = new Date(now.setHours(0, 0, 0, 0));
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+      const todayEnd   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
-      const [totalIncome, totalExpense, dashboardStats] = await Promise.all([
+      // Start of current week (Monday)
+      const dayOfWeek = now.getDay();
+      const diffToMonday = (dayOfWeek === 0 ? -6 : 1 - dayOfWeek);
+      const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday, 0, 0, 0, 0);
+      const weekEnd   = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+      weekEnd.setHours(23, 59, 59, 999);
+
+      const [totalIncome, totalExpense, dashboardStats, todayAgg, weeklyAgg] = await Promise.all([
         this._incomeRepo.getTotalIncome(walletId),
         this._expenseRepo.aggregate([
           { $match: { wallet: new Types.ObjectId(walletId.toString()) } },
           { $group: { _id: null, total: { $sum: '$amount' } } },
         ]),
         this._expenseRepo.getDashboardStats(walletId, firstDayOfMonth, new Date()),
+        // Today's total
+        this._expenseRepo.aggregate([
+          { $match: { wallet: new Types.ObjectId(walletId.toString()), date: { $gte: todayStart, $lte: todayEnd } } },
+          { $group: { _id: null, total: { $sum: '$amount' } } },
+        ]),
+        // This week — group by day-of-week
+        this._expenseRepo.aggregate([
+          { $match: { wallet: new Types.ObjectId(walletId.toString()), date: { $gte: weekStart, $lte: weekEnd } } },
+          { $group: { _id: { $dayOfWeek: '$date' }, total: { $sum: '$amount' } } },
+          { $sort: { '_id': 1 } },
+        ]),
       ]);
 
       const monthIncome = await this._incomeRepo.getTotalIncome(walletId, firstDayOfMonth, new Date());
       
-      const expenseTotal = totalExpense.length > 0 ? totalExpense[0].total : 0;
-      const balance = totalIncome - expenseTotal;
+      const expenseTotal  = totalExpense.length > 0 ? totalExpense[0].total : 0;
+      const todayExpense  = todayAgg.length   > 0 ? todayAgg[0].total   : 0;
+      const balance       = totalIncome - expenseTotal;
 
-      const stats = dashboardStats.length > 0 ? dashboardStats[0] : { totalStats: [], byCategory: [], recent: [] };
+      const stats        = dashboardStats.length > 0 ? dashboardStats[0] : { totalStats: [], byCategory: [], recent: [] };
       const monthExpense = stats.totalStats.length > 0 ? stats.totalStats[0].totalAmount : 0;
+
+      // Build Mon-Sun weekly array
+      const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      // MongoDB $dayOfWeek: 1=Sun, 2=Mon … 7=Sat  →  convert to Mon-based index
+      const weeklyMap: Record<number, number> = {};
+      for (const row of weeklyAgg) {
+        const mongoDow = row._id as number;
+        const monIndex = mongoDow === 1 ? 6 : mongoDow - 2;
+        weeklyMap[monIndex] = row.total;
+      }
+      const weeklyExpense = DAY_NAMES.map((day, i) => ({ day, amount: weeklyMap[i] || 0 }));
 
       // Add a simple aggregate for the past 6 months trend
       const sixMonthsAgo = new Date();
@@ -83,6 +115,8 @@ export class ReportService {
         balance,
         totalIncome,
         totalExpense: expenseTotal,
+        todayExpense,
+        weeklyExpense,
         monthIncome,
         monthExpense,
         categoryBreakdown: stats.byCategory,
