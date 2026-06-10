@@ -33,10 +33,10 @@ export class ExpenseService {
         wallet: walletId as any,
       });
 
-      // Fire push notification (non-blocking)
+      // Fire push to ALL wallet members (non-blocking)
       const amount = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(data.amount);
-      notificationService.sendToUser(userId.toString(), {
-        title: '💸 Expense Added',
+      notificationService.sendToWallet(walletId.toString(), {
+        title: '💸 New Expense',
         body: `${data.title} — ${amount}`,
         tag: 'expense-added',
       });

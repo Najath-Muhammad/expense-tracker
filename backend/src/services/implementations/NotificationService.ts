@@ -1,6 +1,8 @@
 import webpush from 'web-push';
 import User from '../../models/User';
+import Wallet from '../../models/Wallet';
 import logger from '../../utils/logger';
+import { Types } from 'mongoose';
 
 // Configure VAPID — keys come from env vars
 webpush.setVapidDetails(
@@ -20,7 +22,6 @@ export class NotificationService {
     const user = await User.findById(userId).select('+pushSubscriptions');
     if (!user) return;
 
-    // Avoid duplicates by endpoint
     const already = (user.pushSubscriptions || []).some(
       (s) => s.endpoint === subscription.endpoint,
     );
@@ -40,7 +41,7 @@ export class NotificationService {
   // ── Send to a single user ──────────────────────────────────────────────
   async sendToUser(
     userId: string,
-    payload: { title: string; body: string; icon?: string; tag?: string },
+    payload: { title: string; body: string; tag?: string },
   ): Promise<void> {
     try {
       const user = await User.findById(userId).select('+pushSubscriptions');
@@ -54,7 +55,6 @@ export class NotificationService {
           try {
             await webpush.sendNotification(sub as any, data);
           } catch (err: any) {
-            // 410 Gone = subscription expired / user unsubscribed
             if (err.statusCode === 410 || err.statusCode === 404) {
               staleEndpoints.push(sub.endpoint);
             } else {
@@ -64,7 +64,6 @@ export class NotificationService {
         }),
       );
 
-      // Prune stale subscriptions
       if (staleEndpoints.length) {
         await User.findByIdAndUpdate(userId, {
           $pull: { pushSubscriptions: { endpoint: { $in: staleEndpoints } } },
@@ -72,6 +71,33 @@ export class NotificationService {
       }
     } catch (err: any) {
       logger.error(`NotificationService.sendToUser: ${err.message}`);
+    }
+  }
+
+  // ── Send to ALL wallet members (owner + all members) ──────────────────
+  async sendToWallet(
+    walletId: string | Types.ObjectId,
+    payload: { title: string; body: string; tag?: string },
+  ): Promise<void> {
+    try {
+      const wallet = await Wallet.findById(walletId);
+      if (!wallet) return;
+
+      // Collect unique IDs: owner + every member
+      const memberIds = new Set<string>();
+      memberIds.add(wallet.owner.toString());
+      for (const m of wallet.members as any[]) {
+        memberIds.add(m.user.toString());
+      }
+
+      // Notify all concurrently
+      await Promise.all(
+        [...memberIds].map((uid) => this.sendToUser(uid, payload)),
+      );
+
+      logger.info(`Push sent to ${memberIds.size} wallet member(s) for wallet ${walletId}`);
+    } catch (err: any) {
+      logger.error(`NotificationService.sendToWallet: ${err.message}`);
     }
   }
 }
