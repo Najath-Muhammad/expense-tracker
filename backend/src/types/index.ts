@@ -29,6 +29,10 @@ export interface IUser extends Document {
     budgetWarning: boolean;
     goalReached: boolean;
   };
+  pushSubscriptions?: Array<{
+    endpoint: string;
+    keys: { p256dh: string; auth: string };
+  }>;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidate: string): Promise<boolean>;

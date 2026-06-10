@@ -16,6 +16,7 @@ import expenseRoutes from './routes/expense.routes';
 import incomeRoutes from './routes/income.routes';
 import reportRoutes from './routes/report.routes';
 import budgetRoutes from './routes/budget.routes';
+import notificationRoutes from './routes/notification.routes';
 
 const app = express();
 
@@ -79,6 +80,7 @@ app.use(`${apiPrefix}${ROUTES.WALLET}/:walletId${ROUTES.EXPENSE}`, expenseRoutes
 app.use(`${apiPrefix}${ROUTES.WALLET}/:walletId${ROUTES.INCOME}`, incomeRoutes);
 app.use(`${apiPrefix}${ROUTES.WALLET}/:walletId${ROUTES.REPORT}`, reportRoutes);
 app.use(`${apiPrefix}${ROUTES.WALLET}/:walletId${ROUTES.BUDGET}`, budgetRoutes);
+app.use(`${apiPrefix}/notifications`, notificationRoutes);
 
 // ─── Widget API (lightweight for mobile widgets) ───────────────────────────
 app.use(`${apiPrefix}/widget`, (req: Request, res: Response, next: NextFunction) => {

@@ -5,6 +5,7 @@ import { NotFoundError, ForbiddenError } from '../../errors';
 import { MESSAGES } from '../../constants';
 import logger from '../../utils/logger';
 import { IncomeFilters, CreateIncomeDTO } from '../../types';
+import { notificationService } from './NotificationService';
 
 export class IncomeService {
   private _incomeRepo: IIncomeRepository;
@@ -26,11 +27,21 @@ export class IncomeService {
     try {
       await this._checkWalletAccess(walletId, userId);
 
-      return this._incomeRepo.create({
+      const income = await this._incomeRepo.create({
         ...data as any,
         user: userId as any,
         wallet: walletId as any,
       });
+
+      // Fire push notification (non-blocking)
+      const amount = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(data.amount);
+      notificationService.sendToUser(userId.toString(), {
+        title: '💰 Income Received',
+        body: `${data.title} — ${amount}`,
+        tag: 'income-added',
+      });
+
+      return income;
     } catch (error: any) {
       logger.error(`IncomeService.addIncome error: ${error.message}`);
       throw error;

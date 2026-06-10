@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Moon, Sun, User, Lock, Bell, Palette, Globe, Download } from 'lucide-react';
+import { Moon, Sun, User, Lock, Bell, Palette, BellOff, BellRing, Smartphone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useThemeStore, useAuthStore } from '../../store';
 import { authApi } from '../../api';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { usePushNotifications } from '../../hooks/usePushNotifications';
 
 const passwordSchema = z.object({
   currentPassword: z.string().min(1, 'Required'),
@@ -36,6 +37,7 @@ function Section({ title, icon: Icon, children }) {
 export default function SettingsPage() {
   const { theme, toggleTheme } = useThemeStore();
   const { user, refreshUser } = useAuthStore();
+  const push = usePushNotifications();
 
   const profileForm = useForm({ resolver: zodResolver(profileSchema), defaultValues: { name: user?.name || '', phone: user?.phone || '' } });
   const passwordForm = useForm({ resolver: zodResolver(passwordSchema) });
@@ -149,33 +151,61 @@ export default function SettingsPage() {
 
       {/* Notifications */}
       <Section title="Notifications" icon={Bell}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {[
-            { label: 'Expense Added', desc: 'Notify when expense is added' },
-            { label: 'Income Added', desc: 'Notify when income is added' },
-            { label: 'Budget Warning', desc: 'Alert at 50%, 75%, 90%' },
-            { label: 'Goal Reached', desc: 'Notify when savings goal is met' },
-          ].map(({ label, desc }) => (
-            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <p style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{label}</p>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{desc}</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+          {/* Push Notification Toggle */}
+          <div style={{
+            padding: '1rem 1.25rem',
+            background: push.isSubscribed ? 'var(--brand-primary-dim)' : 'var(--bg-elevated)',
+            border: `1.5px solid ${push.isSubscribed ? 'rgba(16,185,129,0.3)' : 'var(--border)'}`,
+            borderRadius: 14,
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem',
+            transition: 'all 0.2s',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: 12,
+                background: push.isSubscribed ? 'rgba(16,185,129,0.15)' : 'var(--bg-hover)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+                {push.isSubscribed
+                  ? <BellRing size={18} style={{ color: 'var(--brand-primary)' }} />
+                  : <BellOff size={18} style={{ color: 'var(--text-muted)' }} />}
               </div>
-              <label style={{ position: 'relative', width: 44, height: 24, cursor: 'pointer' }}>
-                <input type="checkbox" defaultChecked style={{ opacity: 0, width: 0, height: 0 }} />
-                <span style={{
-                  position: 'absolute', inset: 0, background: 'var(--brand-primary)',
-                  borderRadius: 99, transition: '0.3s',
-                }}>
-                  <span style={{
-                    position: 'absolute', left: 20, top: 2,
-                    width: 20, height: 20, borderRadius: '50%', background: 'white',
-                    transition: '0.3s',
-                  }} />
-                </span>
-              </label>
+              <div>
+                <p style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                  Push Notifications
+                </p>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
+                  {!push.isSupported
+                    ? 'Not supported by this browser'
+                    : push.permission === 'denied'
+                    ? 'Permission denied — reset in browser settings'
+                    : push.isSubscribed
+                    ? 'You will receive alerts for expenses & income'
+                    : 'Enable to get real-time alerts on this device'}
+                </p>
+              </div>
             </div>
-          ))}
+            {push.isSupported && push.permission !== 'denied' && (
+              <button
+                onClick={push.isSubscribed ? push.unsubscribe : push.subscribe}
+                disabled={push.isLoading}
+                className={push.isSubscribed ? 'btn-danger' : 'btn-primary'}
+                style={{ fontSize: '0.82rem', padding: '0.55rem 1.1rem', flexShrink: 0 }}
+              >
+                {push.isLoading
+                  ? '...'
+                  : push.isSubscribed
+                  ? 'Disable'
+                  : 'Enable'}
+              </button>
+            )}
+          </div>
+
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <Smartphone size={13} /> Notifications are per-device. Enable on each browser/device you use.
+          </p>
         </div>
       </Section>
     </div>

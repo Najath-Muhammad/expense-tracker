@@ -5,6 +5,7 @@ import { NotFoundError, ForbiddenError } from '../../errors';
 import { MESSAGES } from '../../constants';
 import logger from '../../utils/logger';
 import { ExpenseFilters, CreateExpenseDTO } from '../../types';
+import { notificationService } from './NotificationService';
 
 export class ExpenseService {
   private _expenseRepo: IExpenseRepository;
@@ -26,11 +27,21 @@ export class ExpenseService {
     try {
       await this._checkWalletAccess(walletId, userId);
 
-      return this._expenseRepo.create({
+      const expense = await this._expenseRepo.create({
         ...data as any,
         user: userId as any,
         wallet: walletId as any,
       });
+
+      // Fire push notification (non-blocking)
+      const amount = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(data.amount);
+      notificationService.sendToUser(userId.toString(), {
+        title: '💸 Expense Added',
+        body: `${data.title} — ${amount}`,
+        tag: 'expense-added',
+      });
+
+      return expense;
     } catch (error: any) {
       logger.error(`ExpenseService.addExpense error: ${error.message}`);
       throw error;
