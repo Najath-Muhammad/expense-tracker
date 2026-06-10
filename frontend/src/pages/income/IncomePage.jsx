@@ -8,7 +8,7 @@ import { Plus, Trash2, Edit2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { incomeApi } from '../../api';
-import { useWalletStore } from '../../store';
+import { useWalletStore, useNotificationStore } from '../../store';
 
 const SOURCES = ['salary', 'freelance', 'business', 'investment', 'rental', 'gift', 'bonus', 'others'];
 const SOURCE_ICONS = { salary: '💼', freelance: '💻', business: '🏢', investment: '📈', rental: '🏠', gift: '🎁', bonus: '⭐', others: '💰' };
@@ -41,8 +41,16 @@ function IncomeModal({ onClose, income = null, walletId }) {
   const onSubmit = async (data) => {
     try {
       if (!walletId) { toast.error('Please select a wallet first'); return; }
-      if (isEdit) { await incomeApi.update(activeWallet._id, income._id, data); toast.success('Income updated!'); }
-      else { await incomeApi.add(walletId, data); toast.success('Income added! 🎉'); }
+      const addNotification = useNotificationStore.getState().addNotification;
+      if (isEdit) {
+        await incomeApi.update(activeWallet._id, income._id, data);
+        toast.success('Income updated!');
+        addNotification({ title: '✏️ Income Updated', body: `${data.title} — ${formatCurrency(data.amount)}`, icon: '✏️' });
+      } else {
+        await incomeApi.add(walletId, data);
+        toast.success('Income added! 🎉');
+        addNotification({ title: '💰 Income Added', body: `${data.title} — ${formatCurrency(data.amount)}`, icon: '💰' });
+      }
       queryClient.invalidateQueries(['income', walletId]);
       queryClient.invalidateQueries(['dashboard', walletId]);
       onClose();

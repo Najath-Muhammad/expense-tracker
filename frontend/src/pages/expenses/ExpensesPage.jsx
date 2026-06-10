@@ -8,7 +8,7 @@ import { Plus, Search, Filter, Trash2, Edit2, X, SlidersHorizontal } from 'lucid
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { expenseApi } from '../../api';
-import { useWalletStore } from '../../store';
+import { useWalletStore, useNotificationStore } from '../../store';
 
 const CATEGORIES = ['food', 'fuel', 'rent', 'shopping', 'bills', 'entertainment', 'travel', 'health', 'education', 'investment', 'others'];
 const CATEGORY_ICONS = { food: '🍔', fuel: '⛽', rent: '🏠', shopping: '🛍️', bills: '💡', entertainment: '🎮', travel: '✈️', health: '💊', education: '📚', investment: '📈', others: '💰' };
@@ -48,12 +48,15 @@ function ExpenseModal({ onClose, expense = null, walletId }) {
   const onSubmit = async (data) => {
     try {
       if (!walletId) { toast.error('Please select a wallet first'); return; }
+      const addNotification = useNotificationStore.getState().addNotification;
       if (isEdit) {
         await expenseApi.update(activeWallet._id, expense._id, data);
         toast.success('Expense updated!');
+        addNotification({ title: '✏️ Expense Updated', body: `${data.title} — ${formatCurrency(data.amount)}`, icon: '✏️' });
       } else {
         await expenseApi.add(walletId, data);
         toast.success('Expense added! 💸');
+        addNotification({ title: '💸 Expense Added', body: `${data.title} — ${formatCurrency(data.amount)}`, icon: '💸' });
       }
       queryClient.invalidateQueries(['expenses', walletId]);
       queryClient.invalidateQueries(['dashboard', walletId]);

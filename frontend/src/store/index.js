@@ -104,3 +104,35 @@ export const useThemeStore = create(
     { name: 'theme-storage' }
   )
 );
+
+/**
+ * In-App Notification Store
+ * Stores transient notifications (expense added, income added, etc.)
+ * Persisted to localStorage so they survive page refreshes.
+ */
+export const useNotificationStore = create(
+  persist(
+    (set, get) => ({
+      notifications: [], // [{ id, title, body, icon, time, read }]
+
+      addNotification: (notification) =>
+        set((state) => ({
+          notifications: [
+            { ...notification, id: Date.now(), time: new Date().toISOString(), read: false },
+            ...state.notifications,
+          ].slice(0, 50), // cap at 50
+        })),
+
+      markAllRead: () =>
+        set((state) => ({
+          notifications: state.notifications.map((n) => ({ ...n, read: true })),
+        })),
+
+      clearAll: () => set({ notifications: [] }),
+
+      unreadCount: () => get().notifications.filter((n) => !n.read).length,
+    }),
+    { name: 'notifications-storage' }
+  )
+);
+

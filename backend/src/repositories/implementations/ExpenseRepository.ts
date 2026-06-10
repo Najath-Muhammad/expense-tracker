@@ -44,9 +44,9 @@ export class ExpenseRepository extends BaseRepository<IExpense> implements IExpe
     const limit = Number(filters.limit) || 10;
     const skip = (page - 1) * limit;
     
-    const sortField = filters.sortBy || 'date';
+    const sortField = filters.sortBy || 'createdAt';
     const sortOrder = filters.sortOrder === 'asc' ? 1 : -1;
-    const sort: any = { [sortField]: sortOrder };
+    const sort: any = { [sortField]: sortOrder, createdAt: -1 };
 
     const [docs, total] = await Promise.all([
       this._model.find(query).sort(sort).skip(skip).limit(limit).populate('user', 'name avatar').exec(),
