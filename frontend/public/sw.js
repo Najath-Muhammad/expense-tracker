@@ -11,8 +11,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: '/favicon.svg',
-      badge: '/favicon.svg',
+      icon: '/favicon.jpg',
+      badge: '/favicon.jpg',
       tag: data.tag || 'expense-tracker',
       renotify: true,
       vibrate: [150, 50, 150],
